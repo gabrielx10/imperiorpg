@@ -75,14 +75,35 @@ async function api(path, method = 'GET', body = null) {
   };
   if (state.token) opts.headers['Authorization'] = `Bearer ${state.token}`;
   if (body) opts.body = JSON.stringify(body);
+
   try {
+    console.log(`[API] ${method} ${path}`, body || '');
     const res = await fetch(path, opts);
-    const data = await res.json();
-    if (!res.ok) throw { status: res.status, message: data.error || 'Erro desconhecido' };
+
+    if (!res.ok && res.status === 404) {
+      throw { status: 404, message: `Endpoint não encontrado: ${path}` };
+    }
+
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      console.error(`[API] Erro ao fazer parse JSON de ${path}:`, res.status);
+      throw { status: res.status, message: `HTTP ${res.status}: Resposta inválida do servidor` };
+    }
+
+    if (!res.ok) {
+      const errMsg = data.error || data.message || 'Erro desconhecido';
+      console.error(`[API] Erro ${res.status}:`, errMsg);
+      throw { status: res.status, message: errMsg };
+    }
+
+    console.log(`[API] Sucesso ${path}`);
     return data;
   } catch (e) {
     if (e.status) throw e;
-    throw { status: 0, message: 'Erro de conexão' };
+    console.error('[API] Erro de conexão:', e);
+    throw { status: 0, message: e.message || 'Erro de conexão com o servidor' };
   }
 }
 
