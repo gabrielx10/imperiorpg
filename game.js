@@ -15,6 +15,7 @@ const state = {
   inventory: [],
   activeEvents: [],
   battleLogEntries: [],
+  inventoryMap: {},
 };
 
 // ── Game Data (client-side copy) ──
@@ -425,12 +426,14 @@ function renderInventory() {
     return;
   }
 
+  state.inventoryMap = {};
   grid.innerHTML = items.map(entry => {
     const item = entry.item;
     const icon = TYPE_ICONS[item.type] || '📦';
+    state.inventoryMap[entry.inventoryId] = entry;
     return `
       <div class="inv-item ${item.rarity} ${entry.equipped ? 'equipped' : ''}"
-           onclick="showItemModal(${JSON.stringify(JSON.stringify(entry))})"
+           onclick="showItemModal(${entry.inventoryId})"
            title="${item.name}">
         ${entry.equipped ? '<span class="inv-equipped-badge">EQ</span>' : ''}
         <span class="inv-item-icon">${icon}</span>
@@ -440,8 +443,8 @@ function renderInventory() {
   }).join('');
 }
 
-function showItemModal(entryJson) {
-  const entry = JSON.parse(entryJson);
+function showItemModal(inventoryId) {
+  const entry = state.inventoryMap[inventoryId];
   const item = entry.item;
   const color = RARITY_COLORS[item.rarity];
 
@@ -542,9 +545,10 @@ function renderEquipment() {
     const entry = bySlot[s.slot];
     const item = entry ? entry.item : null;
     const color = item ? RARITY_COLORS[item.rarity] : 'var(--border)';
+    if (entry) state.inventoryMap[entry.inventoryId] = entry;
     return `
       <div class="equip-slot ${item ? 'has-item' : ''}" data-slot="${s.slot}"
-           onclick="${item ? `showItemModal(${JSON.stringify(JSON.stringify(entry))})` : ''}">
+           onclick="${item ? `showItemModal(${entry.inventoryId})` : ''}">
         <div class="equip-slot-label">${s.label}</div>
         <div class="equip-slot-icon" style="color:${color}">${item ? (TYPE_ICONS[item.type] || s.icon) : s.icon}</div>
         ${item ? `<div class="equip-slot-name" style="color:${color}">${item.name.slice(0, 20)}</div>` : `<div class="equip-slot-name" style="color:var(--text-dim)">Vazio</div>`}
