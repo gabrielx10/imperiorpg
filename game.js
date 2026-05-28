@@ -32,6 +32,12 @@ const CLASSES = {
   warrior: "Guerreiro", mage: "Mago", archer: "Arqueiro",
 };
 
+const CLASS_DATA = {
+  warrior: { label: "Guerreiro", dmgMult: 1.2, defMult: 1.3, hpMult: 1.4, speedMult: 1.0, critMult: 1.0, luckMult: 1.0 },
+  mage: { label: "Mago", dmgMult: 1.5, defMult: 0.9, hpMult: 0.9, speedMult: 1.2, critMult: 1.3, luckMult: 1.1 },
+  archer: { label: "Arqueiro", dmgMult: 1.3, defMult: 1.0, hpMult: 1.0, speedMult: 1.4, critMult: 1.5, luckMult: 1.3 },
+};
+
 const CLASS_ICONS = { warrior: "🛡", mage: "🔮", archer: "🏹" };
 
 const RARITY_COLORS = {
@@ -142,17 +148,46 @@ document.getElementById('form-login').onsubmit = async (e) => {
 document.getElementById('form-register').onsubmit = async (e) => {
   e.preventDefault();
   const errEl = document.getElementById('reg-error');
+  const username = document.getElementById('reg-username').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+
   errEl.textContent = '';
+
+  // Client-side validation
+  if (username.length < 3) {
+    errEl.textContent = 'Username precisa ter no mínimo 3 caracteres';
+    return;
+  }
+  if (username.length > 20) {
+    errEl.textContent = 'Username não pode ter mais de 20 caracteres';
+    return;
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    errEl.textContent = 'Username só pode conter letras, números e underscore';
+    return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = 'Senha precisa ter no mínimo 6 caracteres';
+    return;
+  }
+
   try {
     const data = await api('/api/register', 'POST', {
-      username: document.getElementById('reg-username').value,
-      email: document.getElementById('reg-email').value,
-      password: document.getElementById('reg-password').value,
+      username,
+      email,
+      password,
     });
     state.token = data.token;
     localStorage.setItem('irpg_token', data.token);
+    toast('Conta criada com sucesso!', 'success', 3000);
     await initGame();
-  } catch (e) { errEl.textContent = e.message; }
+  } catch (e) {
+    const msg = e.message || 'Erro ao criar conta';
+    errEl.textContent = msg;
+    if (msg.includes('email')) toast('Email já registrado ou inválido', 'error');
+    if (msg.includes('username')) toast('Username já em uso', 'error');
+  }
 };
 
 document.getElementById('btn-logout').onclick = async () => {
@@ -180,17 +215,40 @@ document.querySelectorAll('.class-card').forEach(card => {
 document.getElementById('form-create-char').onsubmit = async (e) => {
   e.preventDefault();
   const errEl = document.getElementById('create-char-error');
+  const charName = document.getElementById('char-name').value.trim();
+
   errEl.textContent = '';
+
+  // Client-side validation
+  if (charName.length < 3) {
+    errEl.textContent = 'Nome do personagem precisa ter no mínimo 3 caracteres';
+    return;
+  }
+  if (charName.length > 20) {
+    errEl.textContent = 'Nome do personagem não pode ter mais de 20 caracteres';
+    return;
+  }
+  if (!/^[a-zA-Z0-9_ ]+$/.test(charName)) {
+    errEl.textContent = 'Nome inválido. Use apenas letras, números, espaço e underscore';
+    return;
+  }
+
   try {
     const data = await api('/api/create-character', 'POST', {
-      name: document.getElementById('char-name').value,
+      name: charName,
       class: selectedClass,
     });
     state.char = data.character;
+    state.equippedStats = { damage: 0, defense: 0, hp: 0, crit: 0, luck: 0 };
+    updateBattlePanel();
     startGameLoop();
     showScreen('game');
-    toast('Personagem criado! Bem-vindo ao Império!', 'success', 4000);
-  } catch (e) { errEl.textContent = e.message; }
+    toast(`${charName} criado! Bem-vindo ao Império!`, 'success', 4000);
+  } catch (e) {
+    const msg = e.message || 'Erro ao criar personagem';
+    errEl.textContent = msg;
+    if (msg.includes('ja')) toast('Nome de personagem já em uso', 'error');
+  }
 };
 
 // ═══════════════════════════════════════════════
@@ -284,8 +342,9 @@ async function battleTick() {
     }
 
     if (r.leveledUp) {
-      addBattleLog(`🎉 LEVEL UP! Nível ${c.level}! +3 pontos de bônus!`, 'levelup');
-      toast(`Level Up! Nível ${c.level}!`, 'levelup', 5000);
+      const bonusAdded = c.bonusPoints - (state.char?.bonusPoints || 0) || 3;
+      addBattleLog(`🎉 LEVEL UP! Nível ${c.level}! +${bonusAdded} Pontos de Atributo!`, 'levelup');
+      toast(`⬆ Nível ${c.level}! +${bonusAdded} Pontos Disponíveis`, 'levelup', 5000);
     }
 
     updateHeader();
@@ -365,10 +424,20 @@ function updateBattlePanel() {
   document.getElementById('xp-text').textContent = `${c.xp.toLocaleString()}/${(c.xpRequired || 100).toLocaleString()}`;
   document.getElementById('xp-level').textContent = c.level;
 
+  // Calculate combat stats for display
+  const eq = state.equippedStats || {};
+  const level = c.level;
+  const r = c.resetCount;
+  const bonus = 1 + r * 0.1;
+  const cls = CLASS_DATA[c.class] || CLASS_DATA.warrior;
+  const dmg = Math.floor((10 + level * 3 + (c.statDamage || 0) * 2) * bonus * cls.dmgMult + (eq.damage || 0));
+  const def = Math.floor((5 + level * 1.5 + (c.statDefense || 0) * 2) * bonus * cls.defMult + (eq.defense || 0));
+  const crit = Math.min(75, (5 + (c.statCrit || 0) * 1.5 + (eq.crit || 0)) * cls.critMult).toFixed(1);
+
   // Stats mini
-  document.getElementById('stat-dmg').textContent = (c.power || 0).toLocaleString();
-  document.getElementById('stat-def').textContent = '';
-  document.getElementById('stat-crit').textContent = '';
+  document.getElementById('stat-dmg').textContent = dmg.toLocaleString();
+  document.getElementById('stat-def').textContent = def.toLocaleString();
+  document.getElementById('stat-crit').textContent = crit + '%';
   document.getElementById('stat-power').textContent = (c.power || 0).toLocaleString();
   document.getElementById('stat-resets').textContent = c.resetCount;
   document.getElementById('stat-bonus').textContent = c.bonusPoints + ' pts';
