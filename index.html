@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Império RPG Auto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════ LOGIN ═══════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="auth-container">
+    <div class="auth-glow"></div>
+    <div class="auth-card">
+      <div class="game-logo">
+        <span class="logo-icon">⚔</span>
+        <h1 class="logo-title">Império RPG</h1>
+        <p class="logo-sub">Auto Battle</p>
+      </div>
+      <form id="form-login" class="auth-form">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="login-username" placeholder="Seu username" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="login-password" placeholder="Sua senha" required autocomplete="current-password" />
+        </div>
+        <div id="login-error" class="error-msg"></div>
+        <button type="submit" class="btn btn-primary btn-full">Entrar no Reino</button>
+      </form>
+      <p class="auth-switch">Novo aventureiro? <a href="#" id="go-register">Criar conta</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ REGISTER ═══════════════════════ -->
+<div id="screen-register" class="screen">
+  <div class="auth-container">
+    <div class="auth-glow"></div>
+    <div class="auth-card">
+      <div class="game-logo">
+        <span class="logo-icon">⚔</span>
+        <h1 class="logo-title">Império RPG</h1>
+        <p class="logo-sub">Criar Conta</p>
+      </div>
+      <form id="form-register" class="auth-form">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="reg-username" placeholder="Escolha um username" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="reg-email" placeholder="seu@email.com" required />
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" required />
+        </div>
+        <div id="reg-error" class="error-msg"></div>
+        <button type="submit" class="btn btn-primary btn-full">Criar Conta</button>
+      </form>
+      <p class="auth-switch">Já tem conta? <a href="#" id="go-login">Fazer login</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ CREATE CHARACTER ═══════════════════════ -->
+<div id="screen-create-char" class="screen">
+  <div class="create-char-container">
+    <h2 class="section-title">Criar Personagem</h2>
+    <form id="form-create-char">
+      <div class="form-group">
+        <label>Nome do Personagem</label>
+        <input type="text" id="char-name" placeholder="Nome do herói" required maxlength="20" />
+      </div>
+      <div class="class-selector">
+        <label>Escolha sua Classe</label>
+        <div class="class-cards">
+          <div class="class-card active" data-class="warrior">
+            <div class="class-icon">🛡</div>
+            <div class="class-name">Guerreiro</div>
+            <div class="class-desc">Alta vida e defesa. Tanque poderoso.</div>
+            <div class="class-stats">
+              <span class="stat-tag dmg">DMG +20%</span>
+              <span class="stat-tag def">DEF +30%</span>
+              <span class="stat-tag hp">HP +40%</span>
+            </div>
+          </div>
+          <div class="class-card" data-class="mage">
+            <div class="class-icon">🔮</div>
+            <div class="class-name">Mago</div>
+            <div class="class-desc">Dano explosivo e críticos devastadores.</div>
+            <div class="class-stats">
+              <span class="stat-tag dmg">DMG +50%</span>
+              <span class="stat-tag crit">CRIT +30%</span>
+              <span class="stat-tag spd">SPD +20%</span>
+            </div>
+          </div>
+          <div class="class-card" data-class="archer">
+            <div class="class-icon">🏹</div>
+            <div class="class-name">Arqueiro</div>
+            <div class="class-desc">Velocidade e chance crítica superiores.</div>
+            <div class="class-stats">
+              <span class="stat-tag dmg">DMG +30%</span>
+              <span class="stat-tag crit">CRIT +50%</span>
+              <span class="stat-tag spd">SPD +40%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="create-char-error" class="error-msg"></div>
+      <button type="submit" class="btn btn-primary btn-full">Iniciar Aventura</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════ MAIN GAME ═══════════════════════ -->
+<div id="screen-game" class="screen">
+
+  <!-- Top Bar -->
+  <header class="game-header">
+    <div class="header-left">
+      <span class="header-logo">⚔ Império RPG</span>
+    </div>
+    <div class="header-center">
+      <div class="char-quick-info">
+        <span id="hdr-name" class="char-name-hdr"></span>
+        <span id="hdr-class" class="char-class-hdr"></span>
+        <span id="hdr-level" class="char-level-hdr"></span>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="gold-display"><span class="gold-icon">◈</span><span id="hdr-gold">0</span></span>
+      <button id="btn-logout" class="btn btn-sm btn-outline">Sair</button>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="game-nav">
+    <button class="nav-tab active" data-tab="battle">⚔ Batalha</button>
+    <button class="nav-tab" data-tab="stats">📊 Stats</button>
+    <button class="nav-tab" data-tab="inventory">🎒 Inventário</button>
+    <button class="nav-tab" data-tab="equipment">🗡 Equipamentos</button>
+    <button class="nav-tab" data-tab="shop">🏪 Loja</button>
+    <button class="nav-tab" data-tab="guild">🏰 Guilda</button>
+    <button class="nav-tab" data-tab="ranking">🏆 Ranking</button>
+    <button class="nav-tab" data-tab="events">🌟 Eventos</button>
+    <button class="nav-tab" data-tab="chat">💬 Chat</button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="game-main">
+
+    <!-- ── BATTLE TAB ── -->
+    <section id="tab-battle" class="tab-panel active">
+      <div class="battle-layout">
+
+        <div class="battle-left">
+          <div class="panel char-panel">
+            <h3 class="panel-title">Personagem</h3>
+            <div class="hp-section">
+              <div class="hp-label">
+                <span>HP</span>
+                <span id="hp-text">100/100</span>
+              </div>
+              <div class="bar-wrap">
+                <div id="hp-bar" class="bar hp-bar" style="width:100%"></div>
+              </div>
+            </div>
+            <div class="xp-section">
+              <div class="xp-label">
+                <span>XP Nível <span id="xp-level">1</span></span>
+                <span id="xp-text">0/100</span>
+              </div>
+              <div class="bar-wrap">
+                <div id="xp-bar" class="bar xp-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="stat-grid mini">
+              <div class="stat-item"><span class="stat-label">Dano</span><span id="stat-dmg" class="stat-val">0</span></div>
+              <div class="stat-item"><span class="stat-label">Defesa</span><span id="stat-def" class="stat-val">0</span></div>
+              <div class="stat-item"><span class="stat-label">Crítico</span><span id="stat-crit" class="stat-val">0%</span></div>
+              <div class="stat-item"><span class="stat-label">Poder</span><span id="stat-power" class="stat-val">0</span></div>
+              <div class="stat-item"><span class="stat-label">Resets</span><span id="stat-resets" class="stat-val">0</span></div>
+              <div class="stat-item"><span class="stat-label">Pontos</span><span id="stat-bonus" class="stat-val btn-link" title="Clique para distribuir" style="cursor:pointer">0</span></div>
+            </div>
+          </div>
+
+          <div class="panel map-panel">
+            <h3 class="panel-title">Mapa Atual</h3>
+            <div id="map-name" class="map-name">Floresta Inicial</div>
+            <div id="map-level" class="map-level">Nível mínimo: 1</div>
+            <button id="btn-change-map" class="btn btn-sm btn-outline" style="margin-top:8px;width:100%">Trocar Mapa</button>
+          </div>
+
+          <div class="panel events-mini panel-events-active" id="active-events-panel" style="display:none">
+            <h3 class="panel-title">Eventos Ativos</h3>
+            <div id="active-events-list"></div>
+          </div>
+        </div>
+
+        <div class="battle-center">
+          <div class="battle-arena">
+            <div class="battle-vs">
+              <div class="fighter player-fighter">
+                <div id="player-fighter-name" class="fighter-name"></div>
+                <div class="fighter-avatar player-avatar">⚔</div>
+              </div>
+              <div class="vs-text">VS</div>
+              <div class="fighter monster-fighter">
+                <div id="monster-fighter-name" class="fighter-name">???</div>
+                <div class="fighter-avatar monster-avatar" id="monster-avatar">💀</div>
+              </div>
+            </div>
+            <div class="battle-status" id="battle-status">
+              <span class="status-dot active"></span>
+              <span id="status-text">Batalha automática ativa</span>
+            </div>
+          </div>
+
+          <div class="battle-log-container">
+            <h3 class="panel-title">Log de Batalha</h3>
+            <div id="battle-log" class="battle-log"></div>
+          </div>
+        </div>
+
+        <div class="battle-right">
+          <div class="panel offline-panel" id="offline-panel" style="display:none">
+            <h3 class="panel-title">⏰ Progresso Offline</h3>
+            <div id="offline-info"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── STATS TAB ── -->
+    <section id="tab-stats" class="tab-panel">
+      <div class="stats-layout">
+        <div class="panel">
+          <h3 class="panel-title">Atributos do Personagem</h3>
+          <div class="stat-allocate-grid" id="stat-allocate-grid">
+            <!-- rendered by JS -->
+          </div>
+          <div class="bonus-points-info">
+            <span>Pontos disponíveis: </span>
+            <span id="bonus-points-display" class="gold-text">0</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3 class="panel-title">Stats Totais em Combate</h3>
+          <div id="combat-stats-display"></div>
+        </div>
+        <div class="panel" id="reset-panel" style="display:none">
+          <h3 class="panel-title">⚡ Reset Disponível!</h3>
+          <p class="reset-desc">Você atingiu o nível máximo. O reset irá:</p>
+          <ul class="reset-list">
+            <li>Voltar ao nível 1</li>
+            <li>Manter todos os itens e ouro</li>
+            <li>+10% bônus permanente de poder</li>
+            <li>+10 pontos de bônus</li>
+          </ul>
+          <button id="btn-reset" class="btn btn-danger btn-full">Executar Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── INVENTORY TAB ── -->
+    <section id="tab-inventory" class="tab-panel">
+      <div class="inventory-toolbar">
+        <span id="inv-count" class="inv-count">0/80 itens</span>
+        <button id="btn-sell-commons" class="btn btn-sm btn-gold">Vender Comuns/Incomuns</button>
+        <button id="btn-refresh-inv" class="btn btn-sm btn-outline">Atualizar</button>
+      </div>
+      <div id="inventory-grid" class="inventory-grid"></div>
+    </section>
+
+    <!-- ── EQUIPMENT TAB ── -->
+    <section id="tab-equipment" class="tab-panel">
+      <div class="equipment-layout">
+        <div class="equipment-slots" id="equipment-slots">
+          <!-- rendered by JS -->
+        </div>
+        <div class="equipment-bonuses panel">
+          <h3 class="panel-title">Bônus de Equipamentos</h3>
+          <div id="equip-bonuses"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SHOP TAB ── -->
+    <section id="tab-shop" class="tab-panel">
+      <div class="shop-header">
+        <h3 class="panel-title">🏪 Loja do Reino</h3>
+        <span class="gold-display large"><span class="gold-icon">◈</span><span id="shop-gold">0</span> ouro</span>
+      </div>
+      <div id="shop-grid" class="shop-grid"></div>
+    </section>
+
+    <!-- ── GUILD TAB ── -->
+    <section id="tab-guild" class="tab-panel">
+      <div id="guild-content"></div>
+    </section>
+
+    <!-- ── RANKING TAB ── -->
+    <section id="tab-ranking" class="tab-panel">
+      <div class="ranking-tabs">
+        <button class="rank-tab active" data-rank="level">Nível</button>
+        <button class="rank-tab" data-rank="power">Poder</button>
+        <button class="rank-tab" data-rank="resets">Resets</button>
+        <button class="rank-tab" data-rank="gold">Ouro</button>
+      </div>
+      <div id="ranking-table" class="ranking-table"></div>
+    </section>
+
+    <!-- ── EVENTS TAB ── -->
+    <section id="tab-events" class="tab-panel">
+      <div id="events-content" class="events-grid"></div>
+    </section>
+
+    <!-- ── CHAT TAB ── -->
+    <section id="tab-chat" class="tab-panel">
+      <div class="chat-container">
+        <div id="chat-messages" class="chat-messages"></div>
+        <form id="form-chat" class="chat-form">
+          <input type="text" id="chat-input" placeholder="Mensagem (Enter para enviar)..." maxlength="200" />
+          <button type="submit" class="btn btn-primary">Enviar</button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Modals -->
+<div id="modal-overlay" class="modal-overlay" style="display:none">
+  <div id="modal-content" class="modal-content"></div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="game.js"></script>
+</body>
+</html>
