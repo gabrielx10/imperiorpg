@@ -151,6 +151,7 @@
     <button class="nav-tab" data-tab="ranking">🏆 Ranking</button>
     <button class="nav-tab" data-tab="events">🌟 Eventos</button>
     <button class="nav-tab" data-tab="chat">💬 Chat</button>
+    <button class="nav-tab" id="admin-tab" data-tab="admin" style="display:none;color:var(--red2)">⚙ Admin</button>
   </nav>
 
   <!-- Main Content -->
@@ -220,6 +221,10 @@
             <div class="battle-status" id="battle-status">
               <span class="status-dot active"></span>
               <span id="status-text">Batalha automática ativa</span>
+            </div>
+            <div id="manual-mode-panel" class="battle-manual" style="display:none">
+              <button id="manual-attack-btn" class="btn btn-primary" style="width:100%; margin-top:12px; font-size:16px">⚔ Atacar!</button>
+              <button id="toggle-auto-btn" class="btn btn-outline" style="width:100%; margin-top:8px">🤖 Ativar Auto-Ataque</button>
             </div>
           </div>
 
@@ -331,6 +336,16 @@
           <input type="text" id="chat-input" placeholder="Mensagem (Enter para enviar)..." maxlength="200" />
           <button type="submit" class="btn btn-primary">Enviar</button>
         </form>
+      </div>
+    </section>
+
+    <!-- ── ADMIN TAB ── -->
+    <section id="tab-admin" class="tab-panel">
+      <div style="max-width:800px; margin:0 auto;">
+        <div class="panel">
+          <h3 class="panel-title">Painel de Administração</h3>
+          <div id="admin-characters-list" style="margin-top:16px"></div>
+        </div>
       </div>
     </section>
 

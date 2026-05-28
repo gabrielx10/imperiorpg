@@ -16,6 +16,8 @@ const state = {
   activeEvents: [],
   battleLogEntries: [],
   inventoryMap: {},
+  manualMode: false,
+  isManualAttacking: false,
 };
 
 // ── Game Data (client-side copy) ──
@@ -112,6 +114,7 @@ function switchTab(name) {
   if (name === 'chat') loadChat();
   if (name === 'stats') renderStats();
   if (name === 'equipment') loadEquipment();
+  if (name === 'admin') loadAdminPanel();
 }
 
 // ── Modal ──
@@ -271,6 +274,8 @@ async function initGame() {
 
     updateHeader();
     updateBattlePanel();
+    updateManualModePanel();
+    showAdminTab();
     showScreen('game');
     startBattleLoop();
     startChatPoll();
@@ -311,6 +316,43 @@ function stopBattleLoop() {
   if (state.battleTimer) { clearInterval(state.battleTimer); state.battleTimer = null; }
 }
 
+async function manualAttack() {
+  if (state.isManualAttacking || !state.char) return;
+  if (!state.manualMode) return;
+
+  state.isManualAttacking = true;
+  try {
+    const btn = document.getElementById('manual-attack-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Atacando...';
+    }
+
+    const data = await api('/api/manual-attack', 'POST');
+    const r = data.result;
+    const c = data.character;
+
+    // Update HP
+    Object.assign(state.char, c);
+
+    let logMsg = r.win
+      ? `⚔ ${r.monsterName} — DMG: ${r.playerDamageDealt.toLocaleString()}`
+      : `💀 Derrota contra ${r.monsterName} — Recebeu: ${r.playerDamageReceived.toLocaleString()}`;
+
+    addBattleLog(logMsg, r.win ? 'win' : 'lose');
+    updateBattlePanel();
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Atacar';
+    }
+  } catch (e) {
+    toast('Erro ao atacar: ' + e.message, 'error');
+  } finally {
+    state.isManualAttacking = false;
+  }
+}
+
 let isBattling = false;
 async function battleTick() {
   if (isBattling || !state.char) return;
@@ -326,14 +368,31 @@ async function battleTick() {
 
     // Animate monster name
     document.getElementById('monster-fighter-name').textContent = r.monsterName;
-    document.getElementById('monster-avatar').textContent = getMonsterEmoji(r.monsterName);
+    const monsterAvatar = document.getElementById('monster-avatar');
+    monsterAvatar.textContent = getMonsterEmoji(r.monsterName);
 
-    // Log entry
+    // Add shake animation on hit
+    if (r.win) {
+      monsterAvatar.style.animation = 'shake .3s ease';
+      setTimeout(() => { monsterAvatar.style.animation = ''; }, 300);
+    }
+
+    // Log entry with damage indicator
+    let logType = r.win ? 'win' : 'lose';
     let logMsg = r.win
       ? `⚔ ${r.monsterName} — DMG: ${r.playerDamageDealt.toLocaleString()} | XP: +${r.xpGained.toLocaleString()} | Gold: +${r.goldGained.toLocaleString()}`
       : `💀 Derrota contra ${r.monsterName} — Recebeu: ${r.playerDamageReceived.toLocaleString()} | XP: +${r.xpGained.toLocaleString()}`;
 
-    addBattleLog(logMsg, r.win ? 'win' : 'lose');
+    // Check for critical (high damage compared to avg)
+    if (r.win && state.char) {
+      const avgDmg = (state.char.power || 0) / 10;
+      if (r.playerDamageDealt > avgDmg * 2) {
+        logMsg = '💥 CRÍTICO! ' + logMsg;
+        logType = 'critical';
+      }
+    }
+
+    addBattleLog(logMsg, logType);
 
     if (r.droppedItem) {
       const item = r.droppedItem;
@@ -402,7 +461,10 @@ function addBattleLog(msg, type) {
 function updateHeader() {
   const c = state.char;
   if (!c) return;
-  document.getElementById('hdr-name').textContent = c.name;
+  const vipText = c.vipLevel > 0 && (!c.vipExpiry || new Date(c.vipExpiry) > new Date())
+    ? ` 👑 VIP${c.vipLevel}`
+    : '';
+  document.getElementById('hdr-name').textContent = c.name + vipText;
   document.getElementById('hdr-class').textContent = CLASS_ICONS[c.class] + ' ' + (CLASSES[c.class] || c.class);
   document.getElementById('hdr-level').textContent = `Lv.${c.level}`;
   document.getElementById('hdr-gold').textContent = c.gold.toLocaleString();
@@ -1038,6 +1100,141 @@ document.getElementById('form-chat').onsubmit = async (e) => {
 
 function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════
+//   MANUAL COMBAT / VIP
+// ═══════════════════════════════════════════════
+const manualAttackBtn = document.getElementById('manual-attack-btn');
+const toggleAutoBtn = document.getElementById('toggle-auto-btn');
+
+if (manualAttackBtn) {
+  manualAttackBtn.onclick = manualAttack;
+}
+
+if (toggleAutoBtn) {
+  toggleAutoBtn.onclick = async () => {
+    try {
+      const data = await api('/api/vip-toggle', 'POST', { action: 'toggle_auto' });
+      state.char.autoBattle = data.autoBattle;
+      state.manualMode = !data.autoBattle;
+      updateManualModePanel();
+      toast(data.message, 'success');
+    } catch (e) { toast(e.message, 'error'); }
+  };
+}
+
+function updateManualModePanel() {
+  const c = state.char;
+  if (!c) return;
+  const isVip = c.vipLevel > 0 && (!c.vipExpiry || new Date(c.vipExpiry) > new Date());
+  const panel = document.getElementById('manual-mode-panel');
+  const status = document.getElementById('status-text');
+
+  if (isVip) {
+    panel.style.display = 'block';
+    state.manualMode = !c.autoBattle;
+
+    if (c.autoBattle) {
+      status.textContent = '🤖 Auto-ataque ativo (VIP)';
+      if (toggleAutoBtn) toggleAutoBtn.textContent = '⏸ Desativar Auto-Ataque';
+    } else {
+      status.textContent = '⚔ Modo Manual (VIP)';
+      if (toggleAutoBtn) toggleAutoBtn.textContent = '▶ Ativar Auto-Ataque';
+    }
+  } else {
+    panel.style.display = 'none';
+    status.textContent = 'Batalha automática ativa (Upgrade para VIP para modo manual)';
+    state.manualMode = false;
+  }
+}
+
+function showAdminTab() {
+  const adminTab = document.getElementById('admin-tab');
+  if (state.char?.isAdmin) {
+    adminTab.style.display = 'block';
+  } else {
+    adminTab.style.display = 'none';
+  }
+}
+
+async function loadAdminPanel() {
+  try {
+    const data = await api('/api/admin-panel', 'GET');
+    const list = document.getElementById('admin-characters-list');
+    if (!list) return;
+
+    list.innerHTML = data.characters.map(c => `
+      <div class="admin-char-item">
+        <div class="admin-char-info">
+          <strong>${c.name}</strong> (Nv. ${c.level}) - ${CLASSES[c.class] || c.class}
+        </div>
+        <button class="btn btn-sm btn-gold" onclick="openVipGrantDialog(${c.id})">Conceder VIP</button>
+        <button class="btn btn-sm btn-outline" onclick="openAddGoldDialog(${c.id})">Adicionar Ouro</button>
+        <button class="btn btn-sm btn-danger" onclick="toggleAdminStatus(${c.id})">Toggle Admin</button>
+      </div>
+    `).join('');
+  } catch (e) { toast('Erro ao carregar admin: ' + e.message, 'error'); }
+}
+
+function openVipGrantDialog(characterId) {
+  openModal(`
+    <button class="modal-close">&times;</button>
+    <h3 class="modal-title">Conceder VIP</h3>
+    <div style="margin:20px 0">
+      <label>Nível VIP:</label>
+      <select id="vip-level" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text)">
+        <option value="1">VIP 1</option>
+        <option value="2">VIP 2</option>
+        <option value="3">VIP 3</option>
+      </select>
+      <button onclick="grantVip(${characterId})" class="btn btn-primary" style="width:100%;margin-top:16px">Conceder</button>
+    </div>
+  `);
+}
+
+async function grantVip(characterId) {
+  const level = document.getElementById('vip-level').value;
+  try {
+    await api('/api/admin-panel', 'POST', { action: 'grant_vip', characterId, vipLevel: parseInt(level) });
+    closeModal();
+    toast('VIP concedido', 'success');
+    await loadAdminPanel();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function openAddGoldDialog(characterId) {
+  openModal(`
+    <button class="modal-close">&times;</button>
+    <h3 class="modal-title">Adicionar Ouro</h3>
+    <div style="margin:20px 0">
+      <label>Quantidade:</label>
+      <input type="number" id="gold-amount" placeholder="1000" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text)">
+      <button onclick="addGold(${characterId})" class="btn btn-primary" style="width:100%;margin-top:16px">Adicionar</button>
+    </div>
+  `);
+}
+
+async function addGold(characterId) {
+  const amount = parseInt(document.getElementById('gold-amount').value);
+  if (!amount || amount <= 0) {
+    toast('Quantidade inválida', 'error');
+    return;
+  }
+  try {
+    await api('/api/admin-panel', 'POST', { action: 'add_gold', characterId, gold: amount });
+    closeModal();
+    toast('Ouro adicionado', 'success');
+    await loadAdminPanel();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function toggleAdminStatus(characterId) {
+  try {
+    await api('/api/admin-panel', 'POST', { action: 'toggle_admin', characterId });
+    toast('Status alterado', 'success');
+    await loadAdminPanel();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════

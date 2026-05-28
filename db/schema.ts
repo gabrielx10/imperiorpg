@@ -28,16 +28,18 @@ export const characters = pgTable("characters", {
   resetCount: integer("reset_count").notNull().default(0),
   mapId: integer("map_id").notNull().default(0),
   bonusPoints: integer("bonus_points").notNull().default(0),
-  // Base stats (points allocated by player)
   statDamage: integer("stat_damage").notNull().default(0),
   statDefense: integer("stat_defense").notNull().default(0),
   statHp: integer("stat_hp").notNull().default(0),
   statSpeed: integer("stat_speed").notNull().default(0),
   statCrit: integer("stat_crit").notNull().default(0),
   statLuck: integer("stat_luck").notNull().default(0),
-  // Current HP
   currentHp: integer("current_hp").notNull().default(100),
   maxHp: integer("max_hp").notNull().default(100),
+  vipLevel: integer("vip_level").notNull().default(0),
+  vipExpiry: timestamp("vip_expiry"),
+  autoBattle: boolean("auto_battle").notNull().default(false),
+  isAdmin: boolean("is_admin").notNull().default(false),
   lastOnline: timestamp("last_online").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
