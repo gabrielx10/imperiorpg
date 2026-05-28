@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "postgresql",
-  "id": "c0e03c93-4c3a-40c2-a00b-e5a6d5c3b2a1",
+  "id": "d1f14d04-5d4b-41d3-b10c-f6b7e8d9c0a1",
   "prevId": "20260528004943",
   "tables": {
     "characters": {

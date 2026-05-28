@@ -6,8 +6,6 @@
     - `vip_expiry` (timestamp) - When VIP expires
     - `auto_battle` (boolean) - Whether auto-battle is enabled
     - `is_admin` (boolean) - Admin status for management panel
-
-  2. No security changes needed as these are character attributes
 */
 
 ALTER TABLE "characters" ADD COLUMN "vip_level" integer DEFAULT 0 NOT NULL;
